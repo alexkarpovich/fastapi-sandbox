@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  mysql:
+    image: mysql:8
+    restart: always
+    environment: &shared_mysql_env
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - main_network
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    restart: always
+    environment:
+      <<: *shared_mysql_env
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./api:/prj/src
+      - ./wait-for-db.sh:/prj/wait-for-db.sh
+    depends_on:
+      - mysql
+    networks:
+      - main_network
+  
+  
+
+networks:
+  main_network:
+
+volumes:
+  mysql_data:
